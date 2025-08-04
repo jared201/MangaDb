@@ -1,9 +1,15 @@
-from textual.app import App, ComposeResult
-from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import Header, Footer, Button, Input, Label, Select, DataTable, TextArea, Static
-from textual.screen import Screen
-from textual.binding import Binding
-from textual.reactive import reactive
+try:
+    from textual.app import App, ComposeResult
+    from textual.containers import Container, Horizontal, Vertical
+    from textual.widgets import Header, Footer, Button, Input, Label, Select, DataTable, TextArea, Static
+    from textual.screen import Screen
+    from textual.binding import Binding
+    from textual.reactive import reactive
+except ImportError as e:
+    print(f"Error importing textual package: {e}")
+    print("Please make sure textual is installed by running: pip install textual==0.52.1")
+    import sys
+    sys.exit(1)
 import json
 import os
 import sys
@@ -625,14 +631,25 @@ class TextualizeClient(App):
             try:
                 # Start the MongoDB service in a separate process
                 logger.debug(f"Executing: {sys.executable} {service_script}")
-                TextualizeClient.mongo_service_process = subprocess.Popen(
-                    [sys.executable, service_script],
-                    # Redirect output to avoid blocking
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    # Use CREATE_NEW_PROCESS_GROUP on Windows to ensure the process can be terminated properly
-                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
-                )
+
+                # Use shell=True on Windows to avoid console window
+                if os.name == 'nt':
+                    TextualizeClient.mongo_service_process = subprocess.Popen(
+                        f'"{sys.executable}" "{service_path}"',
+                        shell=True,
+                        # Redirect output to avoid blocking
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        # Use CREATE_NEW_PROCESS_GROUP on Windows to ensure the process can be terminated properly
+                        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                    )
+                else:
+                    TextualizeClient.mongo_service_process = subprocess.Popen(
+                        [sys.executable, service_script],
+                        # Redirect output to avoid blocking
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE
+                    )
 
                 # Log process ID
                 pid = TextualizeClient.mongo_service_process.pid
@@ -779,8 +796,91 @@ class TextualizeClient(App):
 
 def main():
     """Run the Textualize client."""
-    app = TextualizeClient()
-    app.run()
+    mongo_process = None
+    try:
+        # Start MongoDB service manually before creating the app
+        # This ensures the service is running before the app tries to connect
+        import subprocess
+        import os
+        import sys
+        import time
+        import atexit
+
+        # Create data directory if it doesn't exist
+        data_dir = "data"
+        if not os.path.exists(data_dir):
+            print(f"Creating data directory: {data_dir}")
+            os.makedirs(data_dir)
+
+        # Start MongoDB service
+        service_script = "mongo_db_service.py"
+        service_path = os.path.abspath(service_script)
+        print(f"Starting MongoDB service from: {service_path}")
+
+        # Use shell=True on Windows to avoid console window
+        if os.name == 'nt':
+            mongo_process = subprocess.Popen(
+                f'"{sys.executable}" "{service_path}"',
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+            )
+        else:
+            mongo_process = subprocess.Popen(
+                [sys.executable, service_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+
+        # Register function to terminate MongoDB service on exit
+        def terminate_mongo_service():
+            if mongo_process:
+                print("Terminating MongoDB service...")
+                try:
+                    if os.name == 'nt':
+                        # On Windows
+                        subprocess.call(['taskkill', '/F', '/T', '/PID', str(mongo_process.pid)])
+                    else:
+                        # On Unix
+                        mongo_process.terminate()
+                        mongo_process.wait(timeout=5)
+                except Exception as e:
+                    print(f"Error terminating MongoDB service: {e}")
+
+        # Register the termination function to be called on exit
+        atexit.register(terminate_mongo_service)
+
+        # Wait for service to start
+        print("Waiting for MongoDB service to start...")
+        time.sleep(5)
+
+        # Now start the app
+        app = TextualizeClient()
+        # Store the mongo_process in the app for proper cleanup
+        app.mongo_process = mongo_process
+        app.run()
+    except Exception as e:
+        print(f"Error running Textualize client: {e}")
+        import traceback
+        traceback.print_exc()
+
+        # Ensure MongoDB service is terminated on error
+        if mongo_process:
+            print("Terminating MongoDB service due to error...")
+            try:
+                if os.name == 'nt':
+                    # On Windows
+                    subprocess.call(['taskkill', '/F', '/T', '/PID', str(mongo_process.pid)])
+                else:
+                    # On Unix
+                    mongo_process.terminate()
+                    mongo_process.wait(timeout=5)
+            except Exception as cleanup_error:
+                print(f"Error terminating MongoDB service: {cleanup_error}")
+
+        return False
+    return True
 
 
 if __name__ == "__main__":
