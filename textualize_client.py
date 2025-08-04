@@ -208,7 +208,7 @@ class DocumentListScreen(Screen):
         yield Header(show_clock=True)
         yield Container(
             Label(f"Collection: {self.collection}", id="title"),
-            DataTable(id="document-table"),
+            DataTable(id="document-table", cursor_type="row"),
             Horizontal(
                 Button("View/Edit", id="view-btn", disabled=True),
                 Button("Create New", id="create-btn"),
@@ -232,6 +232,12 @@ class DocumentListScreen(Screen):
 
             table = self.query_one("#document-table", DataTable)
             table.clear(columns=True)
+
+            # Disable view and delete buttons when loading documents
+            view_btn = self.query_one("#view-btn", Button)
+            delete_btn = self.query_one("#delete-btn", Button)
+            view_btn.disabled = True
+            delete_btn.disabled = True
 
             # If no documents, show a message
             if not self.documents:
@@ -392,7 +398,7 @@ class QueryScreen(Screen):
             TextArea(id="query-editor", language="json"),
             Button("Execute Query", id="execute-btn"),
             Label("Results:", id="results-label"),
-            DataTable(id="results-table"),
+            DataTable(id="results-table", cursor_type="row"),
             Button("Back", id="back-btn"),
             id="query-screen"
         )
@@ -535,7 +541,7 @@ class TextualizeClient(App):
 
     #confirm-screen {
         width: 60;
-        height: 10;
+        height: 15;
         margin: 1 1;
         padding: 1;
         border: solid red;
