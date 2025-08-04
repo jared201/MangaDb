@@ -164,6 +164,99 @@ client.disconnect()
 
 For a complete example, see the `main()` function in `mongo_db_client.py`.
 
+## Querying Collections
+
+You can query collections in MangaDB using several methods, depending on your preferred interface.
+
+### Query Syntax
+
+Queries in MangaDB are JSON objects where:
+- Keys are field names
+- Values are the values to match
+
+For example, to find all documents where the "name" field equals "John Doe":
+```json
+{"name": "John Doe"}
+```
+
+To find documents by their ID:
+```json
+{"_id": "document_id"}
+```
+
+To find all documents in a collection, use an empty query:
+```json
+{}
+```
+
+### Using the Python Client
+
+The MongoDB client provides two methods for querying:
+
+1. `find_one()`: Returns a single document matching the query
+2. `find()`: Returns all documents matching the query
+
+```python
+from mongo_db_client import MongoDBClient
+
+# Connect to the MongoDB service
+client = MongoDBClient()
+client.connect()
+
+# Find a single document by ID
+user = client.find_one("users", {"_id": "document_id"})
+print(user)
+
+# Find all documents with a specific name
+users = client.find("users", {"name": "John Doe"})
+for user in users:
+    print(user)
+
+# Find all documents in a collection
+all_users = client.find("users", {})
+for user in all_users:
+    print(user)
+
+# Disconnect when done
+client.disconnect()
+```
+
+### Using the Textualize TUI Client
+
+The Textualize TUI client provides a user-friendly interface for querying collections:
+
+1. Start the TUI client: `python main.py --tui`
+2. Select a collection from the list
+3. Click the "Query" button
+4. Enter your query in JSON format in the text editor
+5. Click "Execute Query" to see the results
+
+Example queries you can enter in the query editor:
+
+```json
+{"name": "John Doe"}
+```
+
+```json
+{"age": 30}
+```
+
+```json
+{"_id": "document_id"}
+```
+
+### Using the FastAPI Application
+
+You can also query collections using the FastAPI application:
+
+```bash
+# Get all documents in a collection
+curl -X GET "http://127.0.0.1:8000/collections/users"
+
+# The API doesn't directly support custom queries, but you can retrieve all documents
+# and filter them client-side, or use the MongoDB client or TUI for more complex queries
+```
+
 ## Wire Protocol
 
 The wire protocol is a simple binary protocol for communication between clients and the MongoDB service.
