@@ -774,7 +774,7 @@ class TextualizeClient(App):
                         # On Unix
                         TextualizeClient.mongo_service_process.kill()
             except Exception as e:
-                print(f"Error terminating MongoDB service: {e}")
+                print(f"Error terminating MangaDB service: {e}")
             finally:
                 TextualizeClient.mongo_service_process = None
 
@@ -836,7 +836,7 @@ def main():
         # Register function to terminate MongoDB service on exit
         def terminate_mongo_service():
             if mongo_process:
-                print("Terminating MongoDB service...")
+                print("Terminating MangaDB service...")
                 try:
                     if os.name == 'nt':
                         # On Windows
@@ -846,7 +846,7 @@ def main():
                         mongo_process.terminate()
                         mongo_process.wait(timeout=5)
                 except Exception as e:
-                    print(f"Error terminating MongoDB service: {e}")
+                    print(f"Error terminating MangaDB service: {e}")
 
         # Register the termination function to be called on exit
         atexit.register(terminate_mongo_service)
@@ -867,7 +867,7 @@ def main():
 
         # Ensure MongoDB service is terminated on error
         if mongo_process:
-            print("Terminating MongoDB service due to error...")
+            print("Terminating MangaDB service due to error...")
             try:
                 if os.name == 'nt':
                     # On Windows
@@ -877,7 +877,7 @@ def main():
                     mongo_process.terminate()
                     mongo_process.wait(timeout=5)
             except Exception as cleanup_error:
-                print(f"Error terminating MongoDB service: {cleanup_error}")
+                print(f"Error terminating MangaDB service: {cleanup_error}")
 
         return False
     return True
