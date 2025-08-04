@@ -1,0 +1,70 @@
+# Test your FastAPI endpoints for MangaDB
+
+### Get API information
+GET http://127.0.0.1:8000/
+Accept: application/json
+
+### List all collections
+GET http://127.0.0.1:8000/collections
+Accept: application/json
+
+### Create a new manga document
+POST http://127.0.0.1:8000/collections/manga
+Content-Type: application/json
+
+{
+  "title": "One Piece",
+  "author": "Eiichiro Oda",
+  "genres": ["Adventure", "Fantasy", "Action"],
+  "chapters": 1000,
+  "ongoing": true
+}
+
+### Get all manga documents
+GET http://127.0.0.1:8000/collections/manga
+Accept: application/json
+
+### Create another manga document
+POST http://127.0.0.1:8000/collections/manga
+Content-Type: application/json
+
+{
+  "title": "Naruto",
+  "author": "Masashi Kishimoto",
+  "genres": ["Action", "Adventure", "Fantasy"],
+  "chapters": 700,
+  "ongoing": false
+}
+
+### Get a specific manga document by ID (replace with actual ID)
+GET http://127.0.0.1:8000/collections/manga/{{manga_id}}
+Accept: application/json
+
+### Update a manga document (replace with actual ID)
+PUT http://127.0.0.1:8000/collections/manga/{{manga_id}}
+Content-Type: application/json
+
+{
+  "chapters": 1001,
+  "lastUpdated": "2023-01-01"
+}
+
+### Delete a manga document (replace with actual ID)
+DELETE http://127.0.0.1:8000/collections/manga/{{manga_id}}
+Accept: application/json
+
+### Create a user document
+POST http://127.0.0.1:8000/collections/users
+Content-Type: application/json
+
+{
+  "username": "manga_lover",
+  "email": "manga_lover@example.com",
+  "favoriteGenres": ["Action", "Adventure"]
+}
+
+### Get all user documents
+GET http://127.0.0.1:8000/collections/users
+Accept: application/json
+
+###
