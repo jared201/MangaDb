@@ -709,15 +709,15 @@ class TextualizeClient(App):
         # Check if MongoDB service is running
         logger.debug("Checking if MongoDB service is running")
         if not self._ensure_mongo_service_running():
-            logger.warning("No MongoDB service found on port 27020")
-            self.notify("No MongoDB service found on port 27020. UI will load with limited functionality.", severity="warning")
+            logger.warning("No MangaDB service found on port 27020")
+            self.notify("No MangaDB service found on port 27020. UI will load with limited functionality.", severity="warning")
             # Continue loading the UI even if MongoDB service is not available
             return
 
         # Try to connect with retries
         max_retries = 3
         retry_delay = 1  # seconds
-        logger.info(f"Attempting to connect to MongoDB service with {max_retries} retries")
+        logger.info(f"Attempting to connect to MangaDB service with {max_retries} retries")
 
         for attempt in range(max_retries):
             logger.info(f"Connection attempt {attempt + 1}/{max_retries}")
