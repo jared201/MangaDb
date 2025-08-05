@@ -452,6 +452,64 @@ The MongoDB service binds to all network interfaces (0.0.0.0) on port 27020, all
   - Implementing authentication for the API
   - Setting up network-level access controls
 
+## Deployment on Render.com
+
+You can deploy the MangaDB FastAPI application on Render.com by following these steps:
+
+### Prerequisites
+
+- A [Render.com](https://render.com) account
+- Your project code in a Git repository (GitHub, GitLab, etc.)
+
+### Deployment Steps
+
+1. **Create a New Web Service**
+   - Log in to your Render.com account
+   - Click on "New +" and select "Web Service"
+   - Connect your Git repository containing the MangaDB project
+
+2. **Configure the Web Service**
+   - Name: Choose a name for your service (e.g., "mangadb")
+   - Environment: Select "Python 3"
+   - Region: Choose the region closest to your users
+   - Branch: Select the branch you want to deploy (e.g., "main" or "master")
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `python main.py --api`
+
+3. **Configure Environment Variables**
+   - No specific environment variables are required for basic functionality
+   - If you need to customize the application, you can add environment variables as needed
+
+4. **Set Up Persistent Disk for Data Storage**
+   - Under the "Advanced" section, click on "Add Disk"
+   - Set the mount path to `/app/data`
+   - Choose an appropriate disk size (start with 1GB and scale as needed)
+   - This ensures your MongoDB data persists between deployments
+
+5. **Deploy the Service**
+   - Click "Create Web Service"
+   - Render will build and deploy your application
+   - Once deployed, you can access your API at the provided URL (e.g., `https://mangadb.onrender.com`)
+
+### Accessing Your Deployed API
+
+- The FastAPI application will be available at your Render.com URL
+- You can access the API documentation at `https://your-app-name.onrender.com/docs`
+- Use the API endpoints as described in the "Using the FastAPI Application" section
+
+### Limitations and Considerations
+
+- The free tier of Render.com has limited resources and may spin down after periods of inactivity
+- For production use, consider upgrading to a paid plan for better performance and reliability
+- The MongoDB-like service runs in the same process as the API on Render.com, which differs from a traditional setup where MongoDB would run as a separate service
+- Data is stored on the persistent disk, but it's recommended to implement a backup strategy for important data
+
+### Troubleshooting
+
+- If the application fails to start, check the Render.com logs for error messages
+- Ensure the persistent disk is properly mounted to `/app/data`
+- Verify that all dependencies are correctly specified in `requirements.txt`
+
 ## License
 
 This project is licensed under the MIT License.

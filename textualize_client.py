@@ -754,8 +754,13 @@ class TextualizeClient(App):
 
     def action_pop_screen(self) -> None:
         """Go back to the previous screen."""
-        if len(self.screen_stack) > 1:
-            self.pop_screen()
+        try:
+            if len(self.screen_stack) > 1:
+                self.pop_screen()
+        except IndexError:
+            # Handle the case when trying to pop from an empty list
+            logger.warning("Attempted to pop screen from empty stack")
+            # No need to do anything else, just prevent the error
 
 
 def main():
