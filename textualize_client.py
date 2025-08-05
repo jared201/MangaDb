@@ -670,7 +670,7 @@ class TextualizeClient(App):
 
     def __init__(self):
         super().__init__()
-        self.client = MongoDBClient()
+        self.client = MongoDBClient("mgdb://localhost:27020")
 
     def _ensure_mongo_service_running(self):
         """Check if MongoDB service is running by attempting to connect.
@@ -685,7 +685,7 @@ class TextualizeClient(App):
 
         # Verify that the service is accepting connections
         logger.info("Verifying connection to MongoDB service...")
-        test_client = MongoDBClient()
+        test_client = MongoDBClient("mgdb://localhost:27020")
         connection_retries = 3
 
         for i in range(connection_retries):

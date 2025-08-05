@@ -2,6 +2,8 @@ import socket
 import json
 import sys
 import logging
+import re
+from urllib.parse import urlparse
 from typing import Dict, List, Any, Optional, Union
 
 # Configure logging
@@ -24,9 +26,26 @@ MSG_TYPE_ERROR = 7
 MSG_TYPE_LIST_COLLECTIONS = 8
 
 class MongoDBClient:
-    def __init__(self, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT):
-        self.host = host
-        self.port = port
+    def __init__(self, host_or_uri: str = DEFAULT_HOST, port: int = DEFAULT_PORT):
+        """
+        Initialize the MongoDB client.
+        
+        Args:
+            host_or_uri: Either a hostname or a URI with the format "mgdb://hostname:port"
+            port: The port number to use if host_or_uri is a hostname
+        """
+        # Check if host_or_uri is a URI with the mgdb: scheme
+        if host_or_uri.startswith("mgdb://"):
+            # Parse the URI
+            parsed_uri = urlparse(host_or_uri)
+            self.host = parsed_uri.hostname or DEFAULT_HOST
+            self.port = parsed_uri.port or DEFAULT_PORT
+            logger.info(f"Parsed mgdb URI: host={self.host}, port={self.port}")
+        else:
+            # Use host_or_uri as a hostname
+            self.host = host_or_uri
+            self.port = port
+            
         self.socket = None
 
     def connect(self) -> bool:
@@ -261,7 +280,11 @@ class MongoDBClient:
 
 def main():
     """Example usage of the MongoDB client."""
-    client = MongoDBClient()
+    # Example using the mgdb: scheme
+    client = MongoDBClient("mgdb://localhost:27020")
+    
+    # Alternative: using host and port directly
+    # client = MongoDBClient()
 
     print("Connecting to MongoDB service...")
     if not client.connect():
