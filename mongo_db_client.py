@@ -39,19 +39,35 @@ class MongoDBClient:
             # Parse the URI
             parsed_uri = urlparse(host_or_uri)
             self.host = parsed_uri.hostname or DEFAULT_HOST
-            self.port = parsed_uri.port or DEFAULT_PORT
-            logger.info(f"Parsed mgdb URI: host={self.host}, port={self.port}")
+            
+            # If host is a domain name (not localhost or IP address), don't use port
+            if self.host != "localhost" and not re.match(r"^\d+\.\d+\.\d+\.\d+$", self.host):
+                self.port = None
+                logger.info(f"Parsed mgdb URI with domain name: host={self.host}, using all exposed HTTP endpoints")
+            else:
+                self.port = parsed_uri.port or DEFAULT_PORT
+                logger.info(f"Parsed mgdb URI: host={self.host}, port={self.port}")
         else:
             # Use host_or_uri as a hostname
             self.host = host_or_uri
-            self.port = port
+            
+            # If host is a domain name (not localhost or IP address), don't use port
+            if self.host != "localhost" and not re.match(r"^\d+\.\d+\.\d+\.\d+$", self.host):
+                self.port = None
+                logger.info(f"Using domain name: host={self.host}, using all exposed HTTP endpoints")
+            else:
+                self.port = port
+                logger.info(f"Using host: host={self.host}, port={self.port}")
             
         self.socket = None
 
     def connect(self) -> bool:
         """Connect to the MongoDB service."""
         try:
-            logger.info(f"Attempting to connect to MangaDB service at {self.host}:{self.port}")
+            if self.port is None:
+                logger.info(f"Attempting to connect to MangaDB service at {self.host} using all exposed HTTP endpoints")
+            else:
+                logger.info(f"Attempting to connect to MangaDB service at {self.host}:{self.port}")
 
             # Close existing socket if any
             if self.socket:
@@ -65,26 +81,53 @@ class MongoDBClient:
             self.socket.settimeout(5)  # Set timeout to 5 seconds
             logger.debug("Socket timeout set to 5 seconds")
 
-            logger.debug(f"Connecting to {self.host}:{self.port}")
-            self.socket.connect((self.host, self.port))
+            # If port is None (domain name case), we'll use HTTP endpoints instead of direct socket connection
+            if self.port is None:
+                # For domain names, we'll use HTTP endpoints
+                # First, try to connect to the default HTTP port (80)
+                try:
+                    logger.debug(f"Connecting to {self.host}:80 (HTTP)")
+                    self.socket.connect((self.host, 80))
+                except socket.error:
+                    # If that fails, try HTTPS port (443)
+                    logger.debug(f"HTTP connection failed, trying {self.host}:443 (HTTPS)")
+                    self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    self.socket.settimeout(5)
+                    self.socket.connect((self.host, 443))
+            else:
+                # For localhost or IP addresses, use the specified port
+                logger.debug(f"Connecting to {self.host}:{self.port}")
+                self.socket.connect((self.host, self.port))
 
             self.socket.settimeout(None)  # Reset timeout to default
-            logger.info(f"Successfully connected to MangaDB service at {self.host}:{self.port}")
+            if self.port is None:
+                logger.info(f"Successfully connected to MangaDB service at {self.host} using all exposed HTTP endpoints")
+            else:
+                logger.info(f"Successfully connected to MangaDB service at {self.host}:{self.port}")
             return True
         except socket.timeout as e:
-            logger.error(f"Connection timeout to MangaDB service at {self.host}:{self.port}: {e}")
+            if self.port is None:
+                logger.error(f"Connection timeout to MangaDB service at {self.host} using all exposed HTTP endpoints: {e}")
+            else:
+                logger.error(f"Connection timeout to MangaDB service at {self.host}:{self.port}: {e}")
             if self.socket:
                 self.socket.close()
                 self.socket = None
             return False
         except socket.error as e:
-            logger.error(f"Socket error connecting to MangaDB service at {self.host}:{self.port}: {e}")
+            if self.port is None:
+                logger.error(f"Socket error connecting to MangaDB service at {self.host} using all exposed HTTP endpoints: {e}")
+            else:
+                logger.error(f"Socket error connecting to MangaDB service at {self.host}:{self.port}: {e}")
             if self.socket:
                 self.socket.close()
                 self.socket = None
             return False
         except Exception as e:
-            logger.error(f"Unexpected error connecting to MangaDB service at {self.host}:{self.port}: {e}")
+            if self.port is None:
+                logger.error(f"Unexpected error connecting to MangaDB service at {self.host} using all exposed HTTP endpoints: {e}")
+            else:
+                logger.error(f"Unexpected error connecting to MangaDB service at {self.host}:{self.port}: {e}")
             if self.socket:
                 self.socket.close()
                 self.socket = None

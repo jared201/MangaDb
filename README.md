@@ -75,6 +75,37 @@ python main.py --tui
 
 The Textualize client provides a text-based user interface for interacting with the MongoDB service.
 
+#### Command-Line Arguments
+
+The application supports the following command-line arguments:
+
+- `--api`: Start the FastAPI web server (default if no arguments are provided)
+- `--tui`: Start the Textualize TUI client
+- `--host`: Specify the host for MongoDB service (default: localhost)
+- `--port`: Specify the port for MongoDB service (default: 27020, omitted for domain names)
+
+Examples:
+
+```bash
+# Start the API with default settings
+python main.py --api
+
+# Start the TUI with a custom host
+python main.py --tui --host example.com
+
+# Start the API with a custom host and port
+python main.py --api --host localhost --port 27021
+
+# When using a domain name as host, port is automatically omitted
+# and HTTPS is used for connection
+python main.py --tui --host mongodb.example.com
+```
+
+When using a domain name as the host (not localhost or an IP address):
+- The port argument is ignored (if provided)
+- The Textualize client automatically uses the HTTP client instead of direct MongoDB access
+- All REST endpoints are called via HTTP using the FastAPI server running on port 8000
+
 ### Using the FastAPI Application
 
 The FastAPI application provides the following endpoints:
@@ -164,6 +195,32 @@ client.disconnect()
 
 For a complete example, see the `main()` function in `mongo_db_client.py`.
 
+### Using the HTTP Client
+
+For domain names, the Textualize client automatically uses an HTTP client that communicates with the FastAPI server instead of directly accessing the MongoDB service. This HTTP client implements the same interface as the MongoDBClient, making it transparent to the application:
+
+```python
+# This is handled automatically by the Textualize client
+# when connecting to a domain name (not localhost or IP address)
+
+from textualize_client import HTTPClient
+
+# Connect to the API server
+client = HTTPClient("example.com")
+client.connect()
+
+# Use the same methods as with MongoDBClient
+doc_id = client.insert("users", {"name": "John Doe", "email": "john@example.com"})
+user = client.find_one("users", {"_id": doc_id})
+client.update("users", {"_id": doc_id}, {"name": "Jane Doe"})
+client.delete("users", {"_id": doc_id})
+
+# Disconnect when done
+client.disconnect()
+```
+
+The HTTP client translates all operations to REST API calls to the FastAPI server running on port 8000.
+
 ## Querying Collections
 
 You can query collections in MangaDB using several methods, depending on your preferred interface.
@@ -199,9 +256,17 @@ The MongoDB client provides two methods for querying:
 ```python
 from mongo_db_client import MongoDBClient
 
-# Connect to the MongoDB service
+# Connect to the MongoDB service (default: localhost:27020)
 client = MongoDBClient()
 client.connect()
+
+# Or specify a custom host and port
+# client = MongoDBClient("custom-host", 27020)
+# client.connect()
+
+# For domain names, you can omit the port (HTTPS will be used automatically)
+# client = MongoDBClient("mongodb.example.com")
+# client.connect()
 
 # Find a single document by ID
 user = client.find_one("users", {"_id": "document_id"})
@@ -433,9 +498,17 @@ The MongoDB service binds to all network interfaces (0.0.0.0) on port 27020, all
    ```python
    from mongo_db_client import MongoDBClient
 
-   # Connect to the remote MongoDB service
-   client = MongoDBClient(host="<server_ip_or_hostname>", port=27020)
+   # Connect to the remote MongoDB service using host and port
+   client = MongoDBClient("<server_ip_or_hostname>", 27020)
    client.connect()
+
+   # For domain names, you can omit the port (HTTPS will be used automatically)
+   # client = MongoDBClient("mongodb.example.com")
+   # client.connect()
+
+   # Alternatively, you can use the mgdb:// URI format
+   # client = MongoDBClient("mgdb://<server_ip_or_hostname>:27020")
+   # client.connect()
 
    # Use the client as usual
    doc_id = client.insert("users", {"name": "John Doe", "email": "john@example.com"})

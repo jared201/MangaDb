@@ -16,8 +16,184 @@ import sys
 import subprocess
 import time
 import logging
+import requests
 from typing import Dict, List, Any, Optional
 from mongo_db_client import MongoDBClient
+
+class HTTPClient:
+    """HTTP client that implements the same interface as MongoDBClient but uses REST endpoints."""
+    
+    def __init__(self, host: str, port: int = None):
+        """Initialize the HTTP client with host.
+        
+        Note: For remote servers like mangadb-bwmu.onrender.com, port is not needed
+        as the server uses standard HTTP/HTTPS ports.
+        """
+        self.host = host
+        logger.info(f"Connecting to MongoDB at {host}")
+        self.port = None  # Not used for HTTP client
+        
+        # Handle different server configurations
+        if "onrender.com" in host or "." in host:
+            # For render.com or other domain-based deployments, use HTTPS without specifying port
+            self.base_url = f"https://{host}"
+            logger.info(f"Using HTTPS for remote server: {self.base_url}")
+        else:
+            # For localhost or IP addresses, use HTTP with port 8000
+            self.base_url = f"http://{host}:8000"  # FastAPI server runs on port 8000
+            logger.info(f"Using HTTP with port 8000: {self.base_url}")
+            
+        self.connected = False
+        # Initialize socket to None for compatibility with MongoDBClient interface
+        # MongoDBClient uses 'if not self.socket:' to check connection status
+        self.socket = None
+        
+    def connect(self) -> bool:
+        """Connect to the API server."""
+        try:
+            # Test connection by making a request to the root endpoint
+            logger.info(f"Attempting to connect to API server at {self.base_url}")
+            response = requests.get(f"{self.base_url}/", timeout=10)
+            
+            if response.status_code == 200:
+                logger.info(f"Successfully connected to API server at {self.base_url}")
+                self.connected = True
+                # Set socket to a non-None value when connected to maintain compatibility with MongoDBClient interface
+                # MongoDBClient checks 'if not self.socket:' to determine connection status
+                self.socket = True
+                return True
+            else:
+                logger.error(f"Failed to connect to API server. Status code: {response.status_code}")
+                self.connected = False
+                self.socket = None
+                return False
+                
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Connection error connecting to API server: {e}")
+            self.connected = False
+            self.socket = None
+            return False
+        except requests.exceptions.Timeout as e:
+            logger.error(f"Timeout connecting to API server: {e}")
+            self.connected = False
+            self.socket = None
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error connecting to API server: {e}")
+            self.connected = False
+            self.socket = None
+            return False
+            
+    def disconnect(self):
+        """Disconnect from the API server."""
+        self.connected = False
+        self.socket = None
+        
+    def list_collections(self) -> List[str]:
+        """List all available collections."""
+        if not self.connected:
+            raise ConnectionError("Not connected to API server")
+            
+        response = requests.get(f"{self.base_url}/collections")
+        if response.status_code == 200:
+            return response.json().get("collections", [])
+        else:
+            raise Exception(f"List collections failed: {response.text}")
+            
+    def find(self, collection: str, query: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Find all documents matching the query."""
+        if not self.connected:
+            raise ConnectionError("Not connected to API server")
+            
+        response = requests.get(f"{self.base_url}/collections/{collection}")
+        if response.status_code == 200:
+            documents = response.json().get("documents", [])
+            # Filter documents based on query if it's not empty
+            if query:
+                filtered_docs = []
+                for doc in documents:
+                    match = True
+                    for key, value in query.items():
+                        if key not in doc or doc[key] != value:
+                            match = False
+                            break
+                    if match:
+                        filtered_docs.append(doc)
+                return filtered_docs
+            return documents
+        else:
+            raise Exception(f"Find failed: {response.text}")
+            
+    def find_one(self, collection: str, query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Find a single document matching the query."""
+        if not self.connected:
+            raise ConnectionError("Not connected to API server")
+            
+        # If query has _id, use the direct endpoint
+        if "_id" in query:
+            doc_id = query["_id"]
+            response = requests.get(f"{self.base_url}/collections/{collection}/{doc_id}")
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 404:
+                return None
+            else:
+                raise Exception(f"Find one failed: {response.text}")
+        else:
+            # Otherwise, get all documents and filter
+            documents = self.find(collection, query)
+            return documents[0] if documents else None
+            
+    def insert(self, collection: str, document: Dict[str, Any]) -> str:
+        """Insert a document into a collection."""
+        if not self.connected:
+            raise ConnectionError("Not connected to API server")
+            
+        response = requests.post(f"{self.base_url}/collections/{collection}", json=document)
+        if response.status_code == 200:
+            return response.json().get("_id")
+        else:
+            raise Exception(f"Insert failed: {response.text}")
+            
+    def update(self, collection: str, query: Dict[str, Any], update: Dict[str, Any]) -> int:
+        """Update documents matching the query."""
+        if not self.connected:
+            raise ConnectionError("Not connected to API server")
+            
+        # Currently only supports updating by _id
+        if "_id" in query:
+            doc_id = query["_id"]
+            response = requests.put(f"{self.base_url}/collections/{collection}/{doc_id}", json=update)
+            if response.status_code == 200:
+                return response.json().get("modified_count", 0)
+            elif response.status_code == 404:
+                return 0
+            else:
+                raise Exception(f"Update failed: {response.text}")
+        else:
+            # For other queries, we'd need to implement a more complex solution
+            # This is a simplified implementation
+            raise NotImplementedError("Update with non-_id queries is not implemented for HTTP client")
+            
+    def delete(self, collection: str, query: Dict[str, Any]) -> int:
+        """Delete documents matching the query."""
+        if not self.connected:
+            raise ConnectionError("Not connected to API server")
+            
+        # Currently only supports deleting by _id
+        if "_id" in query:
+            doc_id = query["_id"]
+            response = requests.delete(f"{self.base_url}/collections/{collection}/{doc_id}")
+            if response.status_code == 200:
+                return response.json().get("deleted_count", 0)
+            elif response.status_code == 404:
+                return 0
+            else:
+                raise Exception(f"Delete failed: {response.text}")
+        else:
+            # For other queries, we'd need to implement a more complex solution
+            # This is a simplified implementation
+            raise NotImplementedError("Delete with non-_id queries is not implemented for HTTP client")
 
 # Configure logging for textualize client
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -668,39 +844,81 @@ class TextualizeClient(App):
         Binding("escape", "pop_screen", "Back", priority=True),
     ]
 
-    def __init__(self):
+    def __init__(self, host="localhost", port=27020):
         super().__init__()
-        self.client = MongoDBClient("mgdb://localhost:27020")
+        # For domain names (not localhost or IP), use HTTP client
+        if host != "localhost" and not self._is_ip_address(host):
+            self.client = HTTPClient(host)  # Don't use port when host is a domain
+            print(f"Using HTTP client for domain name: {host}")
+        else:
+            # For localhost or IP addresses, use direct MongoDB client
+            if port is not None:
+                self.client = MongoDBClient(host, port)
+            else:
+                self.client = MongoDBClient(host)
+            print(f"Using direct MongoDB client for: {host}")
+            
+    def _is_ip_address(self, host):
+        """Check if the host is an IP address."""
+        import re
+        return re.match(r"^\d+\.\d+\.\d+\.\d+$", host) is not None
 
     def _ensure_mongo_service_running(self):
-        """Check if MongoDB service is running by attempting to connect.
-        This method no longer starts the service, it only checks for an existing connection."""
-        logger.info("Checking if MongoDB service is running")
+        """Check if the service is running by attempting to connect.
+        This method handles both MongoDB direct connections and HTTP API connections."""
+        logger.info("Checking if service is running")
 
-        # Create data directory if it doesn't exist
+        # Create data directory if it doesn't exist (for local MongoDB service)
         data_dir = "data"
         if not os.path.exists(data_dir):
             logger.info(f"Creating data directory: {data_dir}")
             os.makedirs(data_dir)
 
-        # Verify that the service is accepting connections
-        logger.info("Verifying connection to MongoDB service...")
-        test_client = MongoDBClient("mgdb://localhost:27020")
-        connection_retries = 3
-
-        for i in range(connection_retries):
-            logger.debug(f"Connection verification attempt {i+1}/{connection_retries}")
-            if test_client.connect():
-                logger.info("Successfully verified connection to MongoDB service")
-                test_client.disconnect()
-                logger.info("MongoDB service is running")
-                return True
+        # Determine if we're using HTTP client or direct MongoDB client
+        is_http_client = isinstance(self.client, HTTPClient)
+        
+        if is_http_client:
+            # For HTTP clients (remote servers), just try to connect directly
+            logger.info(f"Verifying connection to remote API server at {self.client.base_url}...")
+            connection_retries = 3
+            
+            for i in range(connection_retries):
+                logger.debug(f"Connection verification attempt {i+1}/{connection_retries}")
+                if self.client.connect():
+                    logger.info("Successfully verified connection to remote API server")
+                    return True
+                else:
+                    logger.warning(f"Connection verification attempt {i+1} failed")
+                    time.sleep(1)  # Wait before retrying
+            
+            logger.error(f"Could not connect to remote API server at {self.client.base_url}")
+            return False
+        else:
+            # For direct MongoDB clients, create a test client
+            logger.info("Verifying connection to MongoDB service...")
+            # Create a test client with the same host and port as the main client
+            if hasattr(self.client, 'port') and self.client.port is not None:
+                test_client = MongoDBClient(self.client.host, self.client.port)
             else:
-                logger.warning(f"Connection verification attempt {i+1} failed")
-                time.sleep(1)  # Wait before retrying
+                test_client = MongoDBClient(self.client.host)
+            connection_retries = 3
 
-        logger.error("Could not connect to MongoDB service")
-        return False
+            for i in range(connection_retries):
+                logger.debug(f"Connection verification attempt {i+1}/{connection_retries}")
+                if test_client.connect():
+                    logger.info("Successfully verified connection to MongoDB service")
+                    test_client.disconnect()
+                    logger.info("MongoDB service is running")
+                    return True
+                else:
+                    logger.warning(f"Connection verification attempt {i+1} failed")
+                    time.sleep(1)  # Wait before retrying
+
+            if hasattr(self.client, 'port') and self.client.port is not None:
+                logger.error(f"Could not connect to MongoDB service at {self.client.host}:{self.client.port}")
+            else:
+                logger.error(f"Could not connect to MongoDB service at {self.client.host}")
+            return False
 
     def on_mount(self) -> None:
         """Connect to the MongoDB service when the app starts."""
@@ -709,8 +927,12 @@ class TextualizeClient(App):
         # Check if MongoDB service is running
         logger.debug("Checking if MongoDB service is running")
         if not self._ensure_mongo_service_running():
-            logger.warning("No MangaDB service found on port 27020")
-            self.notify("No MangaDB service found on port 27020. UI will load with limited functionality.", severity="warning")
+            if hasattr(self.client, 'port') and self.client.port is not None:
+                logger.warning(f"No MangaDB service found at {self.client.host}:{self.client.port}")
+                self.notify(f"No MangaDB service found at {self.client.host}:{self.client.port}. UI will load with limited functionality.", severity="warning")
+            else:
+                logger.warning(f"No MangaDB service found at {self.client.host}")
+                self.notify(f"No MangaDB service found at {self.client.host}. UI will load with limited functionality.", severity="warning")
             # Continue loading the UI even if MongoDB service is not available
             return
 
@@ -766,6 +988,13 @@ class TextualizeClient(App):
 def main():
     """Run the Textualize client."""
     try:
+        # Parse command line arguments
+        import argparse
+        parser = argparse.ArgumentParser(description="MangaDB Textualize Client")
+        parser.add_argument("--host", type=str, default="localhost", help="Host for MongoDB service (default: localhost)")
+        parser.add_argument("--port", type=int, help="Port for MongoDB service (default: 27020, omitted for domain names)")
+        args = parser.parse_args()
+
         # Create data directory if it doesn't exist
         import os
         data_dir = "data"
@@ -773,8 +1002,11 @@ def main():
             print(f"Creating data directory: {data_dir}")
             os.makedirs(data_dir)
 
-        # Start the app
-        app = TextualizeClient()
+        # Start the app with command line arguments
+        if args.port is not None:
+            app = TextualizeClient(args.host, args.port)
+        else:
+            app = TextualizeClient(args.host)
         app.run()
     except Exception as e:
         print(f"Error running Textualize client: {e}")
