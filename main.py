@@ -14,13 +14,31 @@ app = FastAPI(
 )
 
 # Global MongoDB client
-mongo_client = MongoDBClient("mgdb://localhost:27020")
+# Will be initialized in startup_db_client with command line arguments
+mongo_client = None
 mongo_service_process = None
 
 @app.on_event("startup")
 async def startup_db_client():
     """Start the MongoDB service and connect the client."""
-    global mongo_service_process
+    global mongo_service_process, mongo_client
+    
+    # Get command line arguments
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", type=str, default="localhost")
+    parser.add_argument("--port", type=int)
+    # Parse known args to avoid errors with other arguments
+    args, _ = parser.parse_known_args()
+    
+    host = args.host
+    port = args.port
+    
+    # Initialize MongoDB client with host and port
+    if port is not None:
+        mongo_client = MongoDBClient(host, port)
+    else:
+        mongo_client = MongoDBClient(host)
 
     # Start MongoDB service in a separate process
     if not os.path.exists("data"):
@@ -144,6 +162,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MangaDB - MongoDB-like service with API and TUI")
     parser.add_argument("--tui", action="store_true", help="Start the Textualize TUI client")
     parser.add_argument("--api", action="store_true", help="Start the FastAPI web server")
+    parser.add_argument("--host", type=str, default="localhost", help="Host for MongoDB service (default: localhost)")
+    parser.add_argument("--port", type=int, help="Port for MongoDB service (default: 27020, omitted for domain names)")
     args = parser.parse_args()
 
     # Default to API if no arguments provided
@@ -162,8 +182,11 @@ if __name__ == "__main__":
 
     try:
         if args.tui:
-            # Start the Textualize client
-            app = TextualizeClient()
+            # Start the Textualize client with host and port
+            if args.port is not None:
+                app = TextualizeClient(args.host, args.port)
+            else:
+                app = TextualizeClient(args.host)
             app.run()
         else:
             # Start the FastAPI server
