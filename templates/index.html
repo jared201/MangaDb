@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MangaDB - A lightweight NoSQL database</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
+</head>
+<body>
+    <!-- Hero section -->
+    <section class="hero is-primary is-bold is-medium">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title is-1">
+                    MangaDB
+                </h1>
+                <h2 class="subtitle is-3">
+                    A lightweight, more delicious NoSQL database.
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works section -->
+    <section class="section">
+        <div class="container">
+            <h2 class="title is-2">How It Works</h2>
+            
+            <div class="columns">
+                <div class="column">
+                    <div class="box">
+                        <h3 class="title is-4">
+                            <span class="icon has-text-primary">
+                                <i class="fas fa-database"></i>
+                            </span>
+                            Document Storage
+                        </h3>
+                        <p class="content">
+                            MangaDB stores JSON documents in collections, similar to MongoDB. Each document is saved to disk in .dat files for persistence, making it lightweight and easy to deploy.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="column">
+                    <div class="box">
+                        <h3 class="title is-4">
+                            <span class="icon has-text-primary">
+                                <i class="fas fa-exchange-alt"></i>
+                            </span>
+                            Custom Wire Protocol
+                        </h3>
+                        <p class="content">
+                            Communication between clients and the server uses a simple binary protocol. Messages include a type byte and a JSON payload, making it efficient and easy to implement.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="column">
+                    <div class="box">
+                        <h3 class="title is-4">
+                            <span class="icon has-text-primary">
+                                <i class="fas fa-code"></i>
+                            </span>
+                            Multiple Interfaces
+                        </h3>
+                        <p class="content">
+                            Access your data through a RESTful API, a text-based user interface (TUI), or directly via the Python client. Choose the interface that best fits your workflow.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="columns">
+                <div class="column">
+                    <div class="box">
+                        <h3 class="title is-4">
+                            <span class="icon has-text-primary">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            Query Documents
+                        </h3>
+                        <p class="content">
+                            Find documents using simple JSON queries. Specify field names and values to match, or use an empty query to retrieve all documents in a collection.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="column">
+                    <div class="box">
+                        <h3 class="title is-4">
+                            <span class="icon has-text-primary">
+                                <i class="fas fa-edit"></i>
+                            </span>
+                            CRUD Operations
+                        </h3>
+                        <p class="content">
+                            Create, read, update, and delete documents with ease. MangaDB automatically generates document IDs and handles all the serialization for you.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="column">
+                    <div class="box">
+                        <h3 class="title is-4">
+                            <span class="icon has-text-primary">
+                                <i class="fas fa-server"></i>
+                            </span>
+                            Easy Deployment
+                        </h3>
+                        <p class="content">
+                            Deploy MangaDB locally or on cloud platforms like Render.com. The lightweight nature makes it perfect for small to medium-sized applications.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Get started section -->
+    <section class="section has-background-light">
+        <div class="container">
+            <h2 class="title is-2">Get Started</h2>
+            
+            <div class="content">
+                <pre><code>pip install -r requirements.txt
+python main.py</code></pre>
+                
+                <p>Access the API at <a href="http://localhost:8000">http://localhost:8000</a> or use the TUI client with:</p>
+                
+                <pre><code>python main.py --tui</code></pre>
+            </div>
+            
+            <div class="buttons">
+                <a href="/docs" class="button is-primary is-large">
+                    <span class="icon">
+                        <i class="fas fa-book"></i>
+                    </span>
+                    <span>API Documentation</span>
+                </a>
+                <a href="https://github.com/your-username/MangaDb" class="button is-link is-large">
+                    <span class="icon">
+                        <i class="fab fa-github"></i>
+                    </span>
+                    <span>GitHub Repository</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+                <strong>MangaDB</strong> - A lightweight, more delicious NoSQL database.
+            </p>
+            <p>
+                Created with <span class="icon has-text-danger"><i class="fas fa-heart"></i></span> using Python, FastAPI, and Bulma CSS.
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

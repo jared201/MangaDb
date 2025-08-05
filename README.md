@@ -11,6 +11,7 @@ A lightweight MongoDB-like service for saving, modifying, reading, and deleting 
 - Automatic document ID generation
 - Multi-threaded server for handling multiple client connections
 - FastAPI application for RESTful API access
+- Responsive landing page with Bulma CSS
 - Textualize TUI client for interactive CRUD operations
 - JSON editor for document creation and modification
 - Query builder for searching documents
@@ -110,7 +111,8 @@ When using a domain name as the host (not localhost or an IP address):
 
 The FastAPI application provides the following endpoints:
 
-- `GET /`: Get information about the API
+- `GET /`: Landing page with Bulma CSS and information about how MangaDB works
+- `GET /api`: Get information about the API
 - `GET /collections`: List all collections
 - `GET /collections/{collection}`: Get all documents in a collection
 - `POST /collections/{collection}`: Create a new document
