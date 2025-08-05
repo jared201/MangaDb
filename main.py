@@ -14,7 +14,7 @@ app = FastAPI(
 )
 
 # Global MongoDB client
-mongo_client = MongoDBClient()
+mongo_client = MongoDBClient("mgdb://localhost:27020")
 mongo_service_process = None
 
 @app.on_event("startup")
