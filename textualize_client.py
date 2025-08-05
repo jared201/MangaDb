@@ -60,34 +60,21 @@ class CollectionSelect(Screen):
                 if not self.client.socket:
                     logger.warning("Client socket is not connected, attempting to connect")
                     if not self.client.connect():
-                        # Try to ensure the service is running
-                        logger.warning("Connection failed, checking if MongoDB service is running")
-                        app = self.app
-                        if hasattr(app, '_ensure_mongo_service_running'):
-                            if not app._ensure_mongo_service_running():
-                                logger.error("Failed to start MongoDB service")
-                                self.notify("Failed to start MongoDB service. Check the logs for details.", severity="error")
-                                self.collections = []
-                                break
-
-                            # Try connecting again after ensuring service is running
-                            logger.info("Retrying connection after ensuring service is running")
-                            if not self.client.connect():
-                                logger.error("Failed to connect to MongoDB service even after restart")
-                                self.notify("Failed to connect to MongoDB service. Check if the service is running.", severity="error")
-                                self.collections = []
-                                break
-                        else:
-                            logger.error("Failed to connect to MongoDB service")
-                            self.notify("Failed to connect to MongoDB service. Check if the service is running.", severity="error")
-                            self.collections = []
-                            break
+                        logger.error("Failed to connect to MongoDB service")
+                        self.notify("Failed to connect to MongoDB service. UI will continue with limited functionality.", severity="warning")
+                        self.collections = []
+                        break
 
                 # Get collections
                 logger.debug("Calling list_collections()")
-                self.collections = self.client.list_collections()
-                logger.info(f"Successfully loaded {len(self.collections)} collections")
-                break  # Success, exit the retry loop
+                try:
+                    self.collections = self.client.list_collections()
+                    logger.info(f"Successfully loaded {len(self.collections)} collections")
+                except Exception as e:
+                    logger.error(f"Error calling list_collections: {e}")
+                    self.notify(f"Error loading collections. UI will continue with limited functionality.", severity="error")
+                    self.collections = []
+                break  # Exit the retry loop
 
             except ConnectionError as e:
                 retry_count += 1
@@ -100,11 +87,11 @@ class CollectionSelect(Screen):
                     time.sleep(1)  # Wait before retry
                 else:
                     # All retries failed
-                    self.notify(f"Error loading collections: {e}", severity="error")
+                    self.notify(f"Error loading collections. UI will continue with limited functionality.", severity="warning")
                     self.collections = []
             except Exception as e:
                 logger.error(f"Unexpected error loading collections: {e}", exc_info=True)
-                self.notify(f"Error loading collections: {e}", severity="error")
+                self.notify(f"Error loading collections. UI will continue with limited functionality.", severity="warning")
                 self.collections = []
                 break  # Don't retry on non-connection errors
 
@@ -172,14 +159,27 @@ class CreateCollectionScreen(Screen):
         """Create a new collection with the given name."""
         collection_name = self.query_one("#collection-name", Input).value
         if collection_name:
+            # Check if client is connected
+            if not self.client.socket:
+                logger.warning("Client socket is not connected, attempting to connect")
+                if not self.client.connect():
+                    logger.error("Failed to connect to MongoDB service")
+                    self.notify("Failed to connect to MongoDB service. Cannot create collection.", severity="error")
+                    return
+            
             # Create an empty document to initialize the collection
             try:
                 self.client.insert(collection_name, {})
+                self.notify(f"Collection '{collection_name}' created successfully", severity="success")
                 self.app.pop_screen()
                 # Refresh the collection list
                 collection_screen = self.app.query_one(CollectionSelect)
                 collection_screen.load_collections()
+            except ConnectionError as e:
+                logger.error(f"Connection error creating collection: {e}")
+                self.notify("Failed to connect to MongoDB service. Cannot create collection.", severity="error")
             except Exception as e:
+                logger.error(f"Error creating collection: {e}", exc_info=True)
                 self.notify(f"Error creating collection: {e}", severity="error")
         else:
             self.notify("Please enter a collection name", severity="warning")
@@ -227,18 +227,29 @@ class DocumentListScreen(Screen):
 
     def load_documents(self) -> None:
         """Load documents from the collection."""
+        # Disable view and delete buttons when loading documents
+        view_btn = self.query_one("#view-btn", Button)
+        delete_btn = self.query_one("#delete-btn", Button)
+        view_btn.disabled = True
+        delete_btn.disabled = True
+        
+        table = self.query_one("#document-table", DataTable)
+        table.clear(columns=True)
+        
+        # Check if client is connected
+        if not self.client.socket:
+            logger.warning("Client socket is not connected, attempting to connect")
+            if not self.client.connect():
+                logger.error("Failed to connect to MongoDB service")
+                self.notify("Failed to connect to MongoDB service. UI will continue with limited functionality.", severity="error")
+                table.add_column("Status")
+                table.add_row("MongoDB connection failed. Cannot load documents.")
+                self.documents = []
+                return
+        
         try:
             self.documents = self.client.find(self.collection, {})
-
-            table = self.query_one("#document-table", DataTable)
-            table.clear(columns=True)
-
-            # Disable view and delete buttons when loading documents
-            view_btn = self.query_one("#view-btn", Button)
-            delete_btn = self.query_one("#delete-btn", Button)
-            view_btn.disabled = True
-            delete_btn.disabled = True
-
+            
             # If no documents, show a message
             if not self.documents:
                 table.add_column("Message")
@@ -262,8 +273,18 @@ class DocumentListScreen(Screen):
                 row = [str(doc.get(column, "")) for column in columns]
                 table.add_row(*row)
 
+        except ConnectionError as e:
+            logger.error(f"Connection error loading documents: {e}")
+            self.notify("Failed to connect to MongoDB service. UI will continue with limited functionality.", severity="error")
+            table.add_column("Status")
+            table.add_row("MongoDB connection failed. Cannot load documents.")
+            self.documents = []
         except Exception as e:
+            logger.error(f"Error loading documents: {e}", exc_info=True)
             self.notify(f"Error loading documents: {e}", severity="error")
+            table.add_column("Status")
+            table.add_row(f"Error: {str(e)}")
+            self.documents = []
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         """Enable buttons when a row is selected."""
@@ -356,26 +377,54 @@ class DocumentEditScreen(Screen):
             editor = self.query_one("#document-editor", TextArea)
             try:
                 updated_doc = json.loads(editor.text)
+                
+                # Check if client is connected
+                if not self.client.socket:
+                    logger.warning("Client socket is not connected, attempting to connect")
+                    if not self.client.connect():
+                        logger.error("Failed to connect to MongoDB service")
+                        self.notify("Failed to connect to MongoDB service. Cannot save document.", severity="error")
+                        return
 
                 if self.is_new:
                     # Insert new document
-                    doc_id = self.client.insert(self.collection, updated_doc)
-                    self.notify(f"Document created with ID: {doc_id}")
+                    try:
+                        doc_id = self.client.insert(self.collection, updated_doc)
+                        self.notify(f"Document created with ID: {doc_id}")
+                        
+                        # Go back to document list and refresh
+                        self.app.pop_screen()
+                        document_list = self.app.query_one(DocumentListScreen)
+                        document_list.load_documents()
+                    except ConnectionError as e:
+                        logger.error(f"Connection error inserting document: {e}")
+                        self.notify("Failed to connect to MongoDB service. Cannot save document.", severity="error")
+                    except Exception as e:
+                        logger.error(f"Error inserting document: {e}", exc_info=True)
+                        self.notify(f"Error saving document: {e}", severity="error")
                 else:
                     # Update existing document
-                    doc_id = self.document.get("_id")
-                    count = self.client.update(self.collection, {"_id": doc_id}, updated_doc)
-                    self.notify(f"Updated {count} document(s)")
-
-                # Go back to document list and refresh
-                self.app.pop_screen()
-                document_list = self.app.query_one(DocumentListScreen)
-                document_list.load_documents()
+                    try:
+                        doc_id = self.document.get("_id")
+                        count = self.client.update(self.collection, {"_id": doc_id}, updated_doc)
+                        self.notify(f"Updated {count} document(s)")
+                        
+                        # Go back to document list and refresh
+                        self.app.pop_screen()
+                        document_list = self.app.query_one(DocumentListScreen)
+                        document_list.load_documents()
+                    except ConnectionError as e:
+                        logger.error(f"Connection error updating document: {e}")
+                        self.notify("Failed to connect to MongoDB service. Cannot update document.", severity="error")
+                    except Exception as e:
+                        logger.error(f"Error updating document: {e}", exc_info=True)
+                        self.notify(f"Error updating document: {e}", severity="error")
 
             except json.JSONDecodeError:
                 self.notify("Invalid JSON format", severity="error")
             except Exception as e:
-                self.notify(f"Error saving document: {e}", severity="error")
+                logger.error(f"Unexpected error in document edit: {e}", exc_info=True)
+                self.notify(f"Error: {e}", severity="error")
 
         elif button_id == "cancel-btn":
             self.app.pop_screen()
@@ -415,40 +464,68 @@ class QueryScreen(Screen):
 
         if button_id == "execute-btn":
             editor = self.query_one("#query-editor", TextArea)
+            table = self.query_one("#results-table", DataTable)
+            table.clear(columns=True)
+            
             try:
                 query = json.loads(editor.text)
-                results = self.client.find(self.collection, query)
+                
+                # Check if client is connected
+                if not self.client.socket:
+                    logger.warning("Client socket is not connected, attempting to connect")
+                    if not self.client.connect():
+                        logger.error("Failed to connect to MongoDB service")
+                        self.notify("Failed to connect to MongoDB service. Cannot execute query.", severity="error")
+                        table.add_column("Status")
+                        table.add_row("MongoDB connection failed. Cannot execute query.")
+                        return
+                
+                try:
+                    results = self.client.find(self.collection, query)
+                    
+                    # If no results, show a message
+                    if not results:
+                        table.add_column("Message")
+                        table.add_row("No documents found matching the query")
+                        return
 
-                table = self.query_one("#results-table", DataTable)
-                table.clear(columns=True)
+                    # Get all unique keys from all documents
+                    all_keys = set()
+                    for doc in results:
+                        all_keys.update(doc.keys())
 
-                # If no results, show a message
-                if not results:
-                    table.add_column("Message")
-                    table.add_row("No documents found matching the query")
-                    return
+                    # Ensure _id is the first column
+                    columns = ["_id"] + sorted([k for k in all_keys if k != "_id"])
 
-                # Get all unique keys from all documents
-                all_keys = set()
-                for doc in results:
-                    all_keys.update(doc.keys())
+                    # Add columns to the table
+                    for column in columns:
+                        table.add_column(column)
 
-                # Ensure _id is the first column
-                columns = ["_id"] + sorted([k for k in all_keys if k != "_id"])
-
-                # Add columns to the table
-                for column in columns:
-                    table.add_column(column)
-
-                # Add rows to the table
-                for doc in results:
-                    row = [str(doc.get(column, "")) for column in columns]
-                    table.add_row(*row)
+                    # Add rows to the table
+                    for doc in results:
+                        row = [str(doc.get(column, "")) for column in columns]
+                        table.add_row(*row)
+                
+                except ConnectionError as e:
+                    logger.error(f"Connection error executing query: {e}")
+                    self.notify("Failed to connect to MongoDB service. Cannot execute query.", severity="error")
+                    table.add_column("Status")
+                    table.add_row("MongoDB connection failed. Cannot execute query.")
+                except Exception as e:
+                    logger.error(f"Error executing query: {e}", exc_info=True)
+                    self.notify(f"Error executing query: {e}", severity="error")
+                    table.add_column("Error")
+                    table.add_row(f"Error executing query: {str(e)}")
 
             except json.JSONDecodeError:
                 self.notify("Invalid JSON format", severity="error")
+                table.add_column("Error")
+                table.add_row("Invalid JSON format in query")
             except Exception as e:
-                self.notify(f"Error executing query: {e}", severity="error")
+                logger.error(f"Unexpected error in query execution: {e}", exc_info=True)
+                self.notify(f"Error: {e}", severity="error")
+                table.add_column("Error")
+                table.add_row(f"Error: {str(e)}")
 
         elif button_id == "back-btn":
             self.app.pop_screen()
@@ -591,132 +668,54 @@ class TextualizeClient(App):
         Binding("escape", "pop_screen", "Back", priority=True),
     ]
 
-    mongo_service_process = None
-
     def __init__(self):
         super().__init__()
         self.client = MongoDBClient()
 
-    def _is_mongo_service_running(self):
-        """Check if the MongoDB service process is running."""
-        logger.debug("Checking if MongoDB service process is running")
-
-        if TextualizeClient.mongo_service_process is None:
-            logger.debug("MongoDB service process is None")
-            return False
-
-        # Check if the process is still running
-        poll_result = TextualizeClient.mongo_service_process.poll()
-        if poll_result is not None:
-            # Process has terminated
-            logger.warning(f"MongoDB service process has terminated with exit code: {poll_result}")
-            TextualizeClient.mongo_service_process = None
-            return False
-
-        logger.debug("MongoDB service process is running")
-        return True
-
     def _ensure_mongo_service_running(self):
-        """Ensure the MongoDB service is running, start it if not."""
-        logger.info("Ensuring MongoDB service is running")
+        """Check if MongoDB service is running by attempting to connect.
+        This method no longer starts the service, it only checks for an existing connection."""
+        logger.info("Checking if MongoDB service is running")
 
-        if not self._is_mongo_service_running():
-            logger.info("MongoDB service is not running, attempting to start it")
+        # Create data directory if it doesn't exist
+        data_dir = "data"
+        if not os.path.exists(data_dir):
+            logger.info(f"Creating data directory: {data_dir}")
+            os.makedirs(data_dir)
 
-            # Create data directory if it doesn't exist
-            data_dir = "data"
-            if not os.path.exists(data_dir):
-                logger.info(f"Creating data directory: {data_dir}")
-                os.makedirs(data_dir)
+        # Verify that the service is accepting connections
+        logger.info("Verifying connection to MongoDB service...")
+        test_client = MongoDBClient()
+        connection_retries = 3
 
-            # Get the full path to the service script
-            service_script = "mongo_db_service.py"
-            service_path = os.path.abspath(service_script)
-            logger.info(f"Starting MongoDB service from: {service_path}")
+        for i in range(connection_retries):
+            logger.debug(f"Connection verification attempt {i+1}/{connection_retries}")
+            if test_client.connect():
+                logger.info("Successfully verified connection to MongoDB service")
+                test_client.disconnect()
+                logger.info("MongoDB service is running")
+                return True
+            else:
+                logger.warning(f"Connection verification attempt {i+1} failed")
+                time.sleep(1)  # Wait before retrying
 
-            try:
-                # Start the MongoDB service in a separate process
-                logger.debug(f"Executing: {sys.executable} {service_script}")
-
-                # Use shell=True on Windows to avoid console window
-                if os.name == 'nt':
-                    TextualizeClient.mongo_service_process = subprocess.Popen(
-                        f'"{sys.executable}" "{service_path}"',
-                        shell=True,
-                        # Redirect output to avoid blocking
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        # Use CREATE_NEW_PROCESS_GROUP on Windows to ensure the process can be terminated properly
-                        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
-                    )
-                else:
-                    TextualizeClient.mongo_service_process = subprocess.Popen(
-                        [sys.executable, service_script],
-                        # Redirect output to avoid blocking
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE
-                    )
-
-                # Log process ID
-                pid = TextualizeClient.mongo_service_process.pid
-                logger.info(f"MongoDB service process started with PID: {pid}")
-
-                # Wait for the service to start
-                wait_time = 5  # Increased from 2 to 5 seconds to give more time for initialization
-                logger.debug(f"Waiting {wait_time} seconds for service to initialize")
-                time.sleep(wait_time)
-
-                # Check if the process started successfully
-                if not self._is_mongo_service_running():
-                    logger.error("MongoDB service failed to start")
-
-                    # Try to get error output from the process
-                    if TextualizeClient.mongo_service_process:
-                        stderr_output = TextualizeClient.mongo_service_process.stderr.read()
-                        if stderr_output:
-                            logger.error(f"MongoDB service error output: {stderr_output.decode('utf-8')}")
-
-                    return False
-
-                # Verify that the service is accepting connections
-                logger.info("MongoDB service process is running, verifying connection...")
-                test_client = MongoDBClient()
-                connection_retries = 3
-
-                for i in range(connection_retries):
-                    logger.debug(f"Connection verification attempt {i+1}/{connection_retries}")
-                    if test_client.connect():
-                        logger.info("Successfully verified connection to MongoDB service")
-                        test_client.disconnect()
-                        logger.info("MongoDB service started successfully")
-                        return True
-                    else:
-                        logger.warning(f"Connection verification attempt {i+1} failed")
-                        time.sleep(1)  # Wait before retrying
-
-                logger.error("MongoDB service process is running but not accepting connections")
-                return False
-
-            except Exception as e:
-                logger.error(f"Error starting MongoDB service: {e}", exc_info=True)
-                return False
-
-        logger.debug("MongoDB service is already running")
-        return True
+        logger.error("Could not connect to MongoDB service")
+        return False
 
     def on_mount(self) -> None:
         """Connect to the MongoDB service when the app starts."""
         logger.info("TextualizeClient mounting - initializing MongoDB connection")
 
-        # Ensure MongoDB service is running
-        logger.debug("Ensuring MongoDB service is running")
+        # Check if MongoDB service is running
+        logger.debug("Checking if MongoDB service is running")
         if not self._ensure_mongo_service_running():
-            logger.error("Failed to start MongoDB service")
-            self.notify("Failed to start MongoDB service", severity="error")
+            logger.warning("No MongoDB service found on port 27020")
+            self.notify("No MongoDB service found on port 27020. UI will load with limited functionality.", severity="warning")
+            # Continue loading the UI even if MongoDB service is not available
             return
 
         # Try to connect with retries
-        max_retries = 5
+        max_retries = 3
         retry_delay = 1  # seconds
         logger.info(f"Attempting to connect to MongoDB service with {max_retries} retries")
 
@@ -725,16 +724,6 @@ class TextualizeClient(App):
             if self.client.connect():
                 logger.info("Successfully connected to MongoDB service")
                 break
-
-            # Check if MongoDB service is still running
-            logger.debug("Checking if MongoDB service is still running")
-            if not self._is_mongo_service_running():
-                logger.warning("MongoDB service is not running, attempting to restart")
-                # Try to restart the service
-                if not self._ensure_mongo_service_running():
-                    logger.error("MongoDB service stopped unexpectedly and could not be restarted")
-                    self.notify("MongoDB service stopped unexpectedly and could not be restarted", severity="error")
-                    return
 
             if attempt < max_retries - 1:
                 logger.warning(f"Connection attempt {attempt + 1} failed, retrying in {retry_delay} seconds")
@@ -745,52 +734,21 @@ class TextualizeClient(App):
         else:
             # All connection attempts failed
             logger.error(f"Failed to connect to MongoDB service after {max_retries} attempts")
-            self.notify(f"Failed to connect to MongoDB service after {max_retries} attempts", severity="error")
+            self.notify(f"Failed to connect to MongoDB service after {max_retries} attempts. UI will load with limited functionality.", severity="error")
 
     def on_unmount(self) -> None:
         """Disconnect from the MongoDB service when the app exits."""
         self.client.disconnect()
 
-        # Terminate the MongoDB service process
-        self._terminate_mongo_service()
-
     def on_load(self) -> None:
         """Load the initial screen."""
         self.push_screen(CollectionSelect(self.client))
 
-    def _terminate_mongo_service(self):
-        """Terminate the MongoDB service process safely."""
-        if TextualizeClient.mongo_service_process:
-            try:
-                # Try to terminate gracefully first
-                TextualizeClient.mongo_service_process.terminate()
-
-                # Wait for up to 3 seconds for the process to terminate
-                for _ in range(30):
-                    if TextualizeClient.mongo_service_process.poll() is not None:
-                        # Process has terminated
-                        break
-                    time.sleep(0.1)
-                else:
-                    # Process didn't terminate, force kill it
-                    if os.name == 'nt':
-                        # On Windows
-                        subprocess.call(['taskkill', '/F', '/T', '/PID', str(TextualizeClient.mongo_service_process.pid)])
-                    else:
-                        # On Unix
-                        TextualizeClient.mongo_service_process.kill()
-            except Exception as e:
-                print(f"Error terminating MangaDB service: {e}")
-            finally:
-                TextualizeClient.mongo_service_process = None
 
     def action_quit(self) -> None:
         """Quit the application."""
         # Disconnect from the MongoDB service
         self.client.disconnect()
-
-        # Terminate the MongoDB service process
-        self._terminate_mongo_service()
 
         self.exit()
 
@@ -802,89 +760,21 @@ class TextualizeClient(App):
 
 def main():
     """Run the Textualize client."""
-    mongo_process = None
     try:
-        # Start MongoDB service manually before creating the app
-        # This ensures the service is running before the app tries to connect
-        import subprocess
-        import os
-        import sys
-        import time
-        import atexit
-
         # Create data directory if it doesn't exist
+        import os
         data_dir = "data"
         if not os.path.exists(data_dir):
             print(f"Creating data directory: {data_dir}")
             os.makedirs(data_dir)
 
-        # Start MongoDB service
-        service_script = "mongo_db_service.py"
-        service_path = os.path.abspath(service_script)
-        print(f"Starting MongoDB service from: {service_path}")
-
-        # Use shell=True on Windows to avoid console window
-        if os.name == 'nt':
-            mongo_process = subprocess.Popen(
-                f'"{sys.executable}" "{service_path}"',
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
-            )
-        else:
-            mongo_process = subprocess.Popen(
-                [sys.executable, service_path],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-
-        # Register function to terminate MongoDB service on exit
-        def terminate_mongo_service():
-            if mongo_process:
-                print("Terminating MangaDB service...")
-                try:
-                    if os.name == 'nt':
-                        # On Windows
-                        subprocess.call(['taskkill', '/F', '/T', '/PID', str(mongo_process.pid)])
-                    else:
-                        # On Unix
-                        mongo_process.terminate()
-                        mongo_process.wait(timeout=5)
-                except Exception as e:
-                    print(f"Error terminating MangaDB service: {e}")
-
-        # Register the termination function to be called on exit
-        atexit.register(terminate_mongo_service)
-
-        # Wait for service to start
-        print("Waiting for MongoDB service to start...")
-        time.sleep(5)
-
-        # Now start the app
+        # Start the app
         app = TextualizeClient()
-        # Store the mongo_process in the app for proper cleanup
-        app.mongo_process = mongo_process
         app.run()
     except Exception as e:
         print(f"Error running Textualize client: {e}")
         import traceback
         traceback.print_exc()
-
-        # Ensure MongoDB service is terminated on error
-        if mongo_process:
-            print("Terminating MangaDB service due to error...")
-            try:
-                if os.name == 'nt':
-                    # On Windows
-                    subprocess.call(['taskkill', '/F', '/T', '/PID', str(mongo_process.pid)])
-                else:
-                    # On Unix
-                    mongo_process.terminate()
-                    mongo_process.wait(timeout=5)
-            except Exception as cleanup_error:
-                print(f"Error terminating MangaDB service: {cleanup_error}")
-
         return False
     return True
 
