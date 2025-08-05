@@ -1,4 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 import subprocess
 import threading
 import os
@@ -12,6 +15,9 @@ app = FastAPI(
     description="API for interacting with the MongoDB-like service",
     version="1.0.0",
 )
+
+# Set up Jinja2 templates
+templates = Jinja2Templates(directory="templates")
 
 # Global MongoDB client
 # Will be initialized in startup_db_client with command line arguments
@@ -66,14 +72,20 @@ async def shutdown_db_client():
         mongo_service_process.terminate()
 
 
-@app.get("/")
-async def root():
-    """Root endpoint that returns information about the API."""
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+    """Root endpoint that serves the landing page."""
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/api")
+async def api_info():
+    """Endpoint that returns information about the API."""
     return {
         "message": "Welcome to MangaDB API",
         "description": "A MongoDB-like service for storing JSON data",
         "endpoints": [
-            {"path": "/", "method": "GET", "description": "This information"},
+            {"path": "/", "method": "GET", "description": "Landing page"},
+            {"path": "/api", "method": "GET", "description": "This API information"},
             {"path": "/collections", "method": "GET", "description": "List all collections"},
             {"path": "/collections/{collection}", "method": "GET", "description": "Get all documents in a collection"},
             {"path": "/collections/{collection}", "method": "POST", "description": "Create a new document"},
