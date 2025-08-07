@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MangaDB Certified Developer Examination</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
+    <style>
+        .question-container {
+            margin-bottom: 2rem;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero section -->
+    <section class="hero is-primary is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title is-2">
+                    MangaDB Certified Developer Examination
+                </h1>
+                <h2 class="subtitle is-4">
+                    Demonstrate your proficiency in MangaDB development
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    <!-- Exam information section -->
+    <section class="section">
+        <div class="container">
+            <div class="content">
+                <h3 class="title is-3">Examination Information</h3>
+                <div class="notification is-info is-light">
+                    <p><strong>Duration:</strong> 30 minutes</p>
+                    <p><strong>Passing Score:</strong> 70% or higher</p>
+                    <p><strong>Certification Fee:</strong> $25.00 USD</p>
+                    <p><strong>Format:</strong> Multiple choice and short answer questions</p>
+                    <p>Upon successful completion and payment, you will receive a personalized MangaDB Certified Developer Certificate.</p>
+                </div>
+            </div>
+
+            <!-- Registration Form -->
+            <div id="registration-form" class="box">
+                <h3 class="title is-4">Registration</h3>
+                <div class="field">
+                    <label class="label">Full Name</label>
+                    <div class="control">
+                        <input id="full-name" class="input" type="text" placeholder="Enter your full name">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Email</label>
+                    <div class="control">
+                        <input id="email" class="input" type="email" placeholder="Enter your email">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="control">
+                        <button id="start-exam-btn" class="button is-primary">Start Examination</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Examination Form -->
+            <div id="examination-form" class="box hidden">
+                <h3 class="title is-4">MangaDB Certification Exam</h3>
+                <div id="timer" class="notification is-warning">
+                    Time Remaining: <span id="time-remaining">30:00</span>
+                </div>
+
+                <form id="exam-form">
+                    <!-- Question 1 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">1. What type of database is MangaDB?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q1" value="a">
+                                    SQL Database
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q1" value="b">
+                                    NoSQL Document Database
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q1" value="c">
+                                    Graph Database
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q1" value="d">
+                                    Relational Database
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">2. What format does MangaDB use to store documents?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q2" value="a">
+                                    XML
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q2" value="b">
+                                    YAML
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q2" value="c">
+                                    JSON
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q2" value="d">
+                                    CSV
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">3. Which of the following is NOT an interface provided by MangaDB?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q3" value="a">
+                                    RESTful API
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q3" value="b">
+                                    Text-based User Interface (TUI)
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q3" value="c">
+                                    Python Client
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q3" value="d">
+                                    Graphical User Interface (GUI)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 4 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">4. What is the file extension used by MangaDB for storing collections?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q4" value="a">
+                                    .db
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q4" value="b">
+                                    .dat
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q4" value="c">
+                                    .json
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q4" value="d">
+                                    .manga
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 5 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">5. Explain how MangaDB's custom wire protocol works (short answer):</label>
+                            <div class="control">
+                                <textarea class="textarea" name="q5" placeholder="Your answer here..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 6 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">6. Which command is used to start the MangaDB service with the text-based user interface?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q6" value="a">
+                                    python main.py --gui
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q6" value="b">
+                                    python main.py --tui
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q6" value="c">
+                                    python main.py --cli
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q6" value="d">
+                                    python main.py --terminal
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 7 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">7. What is the default port used by the MangaDB service?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q7" value="a">
+                                    8080
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q7" value="b">
+                                    3000
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q7" value="c">
+                                    27017
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q7" value="d">
+                                    27020
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 8 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">8. Which of the following is NOT a valid operation in MangaDB?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q8" value="a">
+                                    find
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q8" value="b">
+                                    insert
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q8" value="c">
+                                    join
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q8" value="d">
+                                    update
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 9 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">9. What Python library is used for the text-based user interface in MangaDB?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q9" value="a">
+                                    Textualize
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q9" value="b">
+                                    Curses
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q9" value="c">
+                                    PyTerminal
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q9" value="d">
+                                    PyConsole
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 10 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">10. What is the purpose of the MongoDBClient class in MangaDB?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q10" value="a">
+                                    To connect to MongoDB Atlas
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q10" value="b">
+                                    To provide a client interface for interacting with the MangaDB service
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q10" value="c">
+                                    To convert SQL queries to NoSQL format
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q10" value="d">
+                                    To visualize database statistics
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 11 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">11. Which HTTP method is used to create a new document in MangaDB's REST API?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q11" value="a">
+                                    GET
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q11" value="b">
+                                    PUT
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q11" value="c">
+                                    POST
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q11" value="d">
+                                    DELETE
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 12 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">12. What is the directory where MangaDB stores its collection files by default?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q12" value="a">
+                                    /collections
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q12" value="b">
+                                    /db
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q12" value="c">
+                                    /data
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q12" value="d">
+                                    /storage
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 13 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">13. What web framework is used for MangaDB's REST API?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q13" value="a">
+                                    Flask
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q13" value="b">
+                                    Django
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q13" value="c">
+                                    FastAPI
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q13" value="d">
+                                    Tornado
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 14 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">14. What is the primary advantage of MangaDB over traditional SQL databases?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q14" value="a">
+                                    Better performance for complex joins
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q14" value="b">
+                                    Stronger ACID compliance
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q14" value="c">
+                                    Schema flexibility for document storage
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q14" value="d">
+                                    Built-in sharding capabilities
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 15 -->
+                    <div class="question-container">
+                        <div class="field">
+                            <label class="label">15. What templating engine is used for rendering HTML in MangaDB's web interface?</label>
+                            <div class="control">
+                                <label class="radio">
+                                    <input type="radio" name="q15" value="a">
+                                    Jinja2
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q15" value="b">
+                                    Mako
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q15" value="c">
+                                    Handlebars
+                                </label>
+                                <br>
+                                <label class="radio">
+                                    <input type="radio" name="q15" value="d">
+                                    Pug
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="control">
+                            <button id="submit-exam-btn" type="button" class="button is-primary">Submit Examination</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-section" class="box hidden">
+                <h3 class="title is-4">Examination Results</h3>
+                <div id="score-display" class="notification">
+                    <p>Your Score: <span id="score">0</span>%</p>
+                    <p id="pass-fail-message"></p>
+                </div>
+
+                <div id="payment-section" class="hidden">
+                    <h4 class="title is-5">Complete Your Certification</h4>
+                    <p class="mb-4">Congratulations on passing the examination! To receive your official MangaDB Certified Developer Certificate, please complete the payment process below.</p>
+                    
+                    <div id="paypal-button-container" class="my-4"></div>
+                    
+                    <div class="notification is-info is-light">
+                        <p>After successful payment, your certificate will be generated automatically.</p>
+                    </div>
+                </div>
+
+                <div id="failed-section" class="hidden">
+                    <p>You can retake the examination after 24 hours. Review the MangaDB documentation and try again.</p>
+                    <a href="/" class="button is-primary">Return to Home</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+                <strong>MangaDB</strong> - A lightweight, more delicious NoSQL database.
+            </p>
+            <p>
+                Created with <span class="icon has-text-danger"><i class="fas fa-heart"></i></span> using Python, FastAPI, and Bulma CSS
+            </p>
+        </div>
+    </footer>
+
+    <!-- PayPal SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=AZDxjDScFpQtjWTOUtWKbyN_bDt4OgqaF4eYXlewfBP4-8aqX3PiV8e1GWU6liB2CUXlkA59kJXE7M6R&currency=USD"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const registrationForm = document.getElementById('registration-form');
+            const examinationForm = document.getElementById('examination-form');
+            const resultsSection = document.getElementById('results-section');
+            const startExamBtn = document.getElementById('start-exam-btn');
+            const submitExamBtn = document.getElementById('submit-exam-btn');
+            const scoreDisplay = document.getElementById('score');
+            const passFailMessage = document.getElementById('pass-fail-message');
+            const paymentSection = document.getElementById('payment-section');
+            const failedSection = document.getElementById('failed-section');
+            const timeRemaining = document.getElementById('time-remaining');
+            
+            let examTimer;
+            let timeLeft = 30 * 60; // 30 minutes in seconds
+            
+            // Start exam button click handler
+            startExamBtn.addEventListener('click', function() {
+                const fullName = document.getElementById('full-name').value.trim();
+                const email = document.getElementById('email').value.trim();
+                
+                if (!fullName || !email) {
+                    alert('Please enter your full name and email to start the examination.');
+                    return;
+                }
+                
+                registrationForm.classList.add('hidden');
+                examinationForm.classList.remove('hidden');
+                
+                // Start the timer
+                startTimer();
+            });
+            
+            // Timer function
+            function startTimer() {
+                updateTimerDisplay();
+                
+                examTimer = setInterval(function() {
+                    timeLeft--;
+                    updateTimerDisplay();
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(examTimer);
+                        submitExam();
+                    }
+                }, 1000);
+            }
+            
+            function updateTimerDisplay() {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timeRemaining.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            // Submit exam button click handler
+            submitExamBtn.addEventListener('click', submitExam);
+            
+            function submitExam() {
+                clearInterval(examTimer);
+                
+                // Calculate score
+                let score = 0;
+                
+                // Check multiple choice answers (questions 1-4, 6-15)
+                const correctAnswers = {
+                    q1: 'b', // NoSQL Document Database
+                    q2: 'c', // JSON
+                    q3: 'd', // GUI
+                    q4: 'b', // .dat
+                    q6: 'b', // python main.py --tui
+                    q7: 'd', // 27020
+                    q8: 'c', // join
+                    q9: 'a', // Textualize
+                    q10: 'b', // To provide a client interface for interacting with the MangaDB service
+                    q11: 'c', // POST
+                    q12: 'c', // /data
+                    q13: 'c', // FastAPI
+                    q14: 'c', // Schema flexibility for document storage
+                    q15: 'a'  // Jinja2
+                };
+                
+                for (const [question, answer] of Object.entries(correctAnswers)) {
+                    const selectedOption = document.querySelector(`input[name="${question}"]:checked`);
+                    if (selectedOption && selectedOption.value === answer) {
+                        score += 6; // Each multiple choice question is worth 6% (14 questions × 6% = 84%)
+                    }
+                }
+                
+                // Check short answer (question 5) - simplified for demo
+                const q5Answer = document.querySelector('textarea[name="q5"]').value.trim().toLowerCase();
+                if (q5Answer.includes('binary') && q5Answer.includes('json') && q5Answer.includes('protocol')) {
+                    score += 16; // Short answer is worth 16% (total 100%)
+                }
+                
+                // Display results
+                scoreDisplay.textContent = score;
+                
+                if (score >= 70) {
+                    passFailMessage.textContent = 'Congratulations! You have passed the examination.';
+                    passFailMessage.classList.add('has-text-success');
+                    paymentSection.classList.remove('hidden');
+                    failedSection.classList.add('hidden');
+                    
+                    // Initialize PayPal buttons
+                    initPayPalButtons();
+                } else {
+                    passFailMessage.textContent = 'Unfortunately, you did not pass the examination.';
+                    passFailMessage.classList.add('has-text-danger');
+                    paymentSection.classList.add('hidden');
+                    failedSection.classList.remove('hidden');
+                }
+                
+                examinationForm.classList.add('hidden');
+                resultsSection.classList.remove('hidden');
+                
+                // Save exam results to the server
+                saveExamResults(score);
+            }
+            
+            function saveExamResults(score) {
+                const fullName = document.getElementById('full-name').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const passed = score >= 70;
+                
+                fetch('/api/exam-results', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        full_name: fullName,
+                        email: email,
+                        score: score,
+                        passed: passed,
+                        payment_status: 'pending',
+                        certificate_issued: false,
+                        timestamp: new Date().toISOString()
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Exam results saved:', data);
+                })
+                .catch(error => {
+                    console.error('Error saving exam results:', error);
+                });
+            }
+            
+            function initPayPalButtons() {
+                paypal.Buttons({
+                    createOrder: function(data, actions) {
+                        return actions.order.create({
+                            purchase_units: [{
+                                amount: {
+                                    value: '25.00'
+                                },
+                                description: 'MangaDB Certified Developer Examination Fee'
+                            }]
+                        });
+                    },
+                    onApprove: function(data, actions) {
+                        return actions.order.capture().then(function(details) {
+                            // Payment successful
+                            const fullName = document.getElementById('full-name').value.trim();
+                            
+                            // Update payment status on the server
+                            updatePaymentStatus(details.id);
+                            
+                            // Redirect to certificate page
+                            window.location.href = `/certificate?recipient_name=${encodeURIComponent(fullName)}&payment_id=${details.id}`;
+                        });
+                    }
+                }).render('#paypal-button-container');
+            }
+            
+            function updatePaymentStatus(paymentId) {
+                const email = document.getElementById('email').value.trim();
+                
+                fetch('/api/update-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        payment_id: paymentId,
+                        payment_status: 'completed'
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Payment status updated:', data);
+                })
+                .catch(error => {
+                    console.error('Error updating payment status:', error);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
