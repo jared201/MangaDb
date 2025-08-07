@@ -97,12 +97,12 @@ async def root(request: Request):
     """Root endpoint that serves the landing page."""
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.get("/exam", response_class=HTMLResponse)
+@app.get("/exam", response_class=HTMLResponse, include_in_schema=False)
 async def exam(request: Request):
     """Serve the MangaDB Certified Developer Examination page."""
     return templates.TemplateResponse("exam.html", {"request": request})
 
-@app.get("/certificate", response_class=HTMLResponse)
+@app.get("/certificate", response_class=HTMLResponse, include_in_schema=False)
 async def certificate(
     request: Request, 
     recipient_name: str = "John Doe", 
@@ -151,10 +151,6 @@ async def api_info():
         "endpoints": [
             {"path": "/", "method": "GET", "description": "Landing page"},
             {"path": "/api", "method": "GET", "description": "This API information"},
-            {"path": "/exam", "method": "GET", "description": "MangaDB Certified Developer Examination"},
-            {"path": "/certificate", "method": "GET", "description": "Generate a MangaDB Certified Developer certificate"},
-            {"path": "/api/exam-results", "method": "POST", "description": "Save examination results"},
-            {"path": "/api/update-payment", "method": "POST", "description": "Update payment status"},
             {"path": "/collections", "method": "GET", "description": "List all collections"},
             {"path": "/collections/{collection}", "method": "GET", "description": "Get all documents in a collection"},
             {"path": "/collections/{collection}", "method": "POST", "description": "Create a new document"},
@@ -164,7 +160,7 @@ async def api_info():
         ]
     }
 
-@app.post("/api/exam-results")
+@app.post("/api/exam-results", include_in_schema=False)
 async def save_exam_results(exam_result: ExamResult):
     """Save examination results to the database."""
     try:
@@ -177,7 +173,7 @@ async def save_exam_results(exam_result: ExamResult):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/update-payment")
+@app.post("/api/update-payment", include_in_schema=False)
 async def update_payment_status(payment_update: PaymentUpdate):
     """Update payment status for an examination."""
     try:
