@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+import datetime
 import subprocess
 import threading
 import os
@@ -77,6 +78,24 @@ async def root(request: Request):
     """Root endpoint that serves the landing page."""
     return templates.TemplateResponse("index.html", {"request": request})
 
+@app.get("/certificate", response_class=HTMLResponse)
+async def certificate(request: Request, recipient_name: str = "John Doe", signatory_name: str = "Jared Odulio", signatory_title: str = "MangaDB Lead Developer"):
+    """Generate a MangaDB Certified Developer certificate."""
+    # Get current date in a nice format
+    current_date = datetime.datetime.now().strftime("%B %d, %Y")
+    
+    # Render the certificate template with the provided information
+    return templates.TemplateResponse(
+        "certificate.html", 
+        {
+            "request": request,
+            "recipient_name": recipient_name,
+            "signatory_name": signatory_name,
+            "signatory_title": signatory_title,
+            "certificate_date": current_date
+        }
+    )
+
 @app.get("/api")
 async def api_info():
     """Endpoint that returns information about the API."""
@@ -86,6 +105,7 @@ async def api_info():
         "endpoints": [
             {"path": "/", "method": "GET", "description": "Landing page"},
             {"path": "/api", "method": "GET", "description": "This API information"},
+            {"path": "/certificate", "method": "GET", "description": "Generate a MangaDB Certified Developer certificate"},
             {"path": "/collections", "method": "GET", "description": "List all collections"},
             {"path": "/collections/{collection}", "method": "GET", "description": "Get all documents in a collection"},
             {"path": "/collections/{collection}", "method": "POST", "description": "Create a new document"},

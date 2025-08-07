@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MangaDB Certified Developer Certificate</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        .certificate-container {
+            width: 850px;
+            height: 600px;
+            margin: 20px auto;
+            background-color: white;
+            border: 20px solid #4a148c;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.2);
+        }
+        .certificate-header {
+            margin-bottom: 20px;
+        }
+        .certificate-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #4a148c;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .certificate-subtitle {
+            font-size: 24px;
+            color: #7b1fa2;
+            margin-bottom: 30px;
+        }
+        .certificate-body {
+            margin: 30px 0;
+            line-height: 1.6;
+        }
+        .recipient-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4a148c;
+            margin: 20px 0;
+            border-bottom: 2px solid #4a148c;
+            display: inline-block;
+            padding: 0 10px 5px;
+        }
+        .certificate-text {
+            font-size: 18px;
+            margin: 20px 0;
+        }
+        .certificate-date {
+            font-size: 16px;
+            margin: 20px 0;
+        }
+        .certificate-footer {
+            margin-top: 50px;
+            position: relative;
+        }
+        .signature {
+            font-family: 'Brush Script MT', cursive;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        .signatory {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .certificate-seal {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            width: 120px;
+            height: 120px;
+            background-color: #4a148c;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            transform: rotate(-15deg);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        .seal-text {
+            text-align: center;
+            line-height: 1.2;
+        }
+        .logo {
+            max-width: 150px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+        <div class="certificate-header">
+            <h1 class="certificate-title">Certificate of Achievement</h1>
+            <h2 class="certificate-subtitle">MangaDB Certified Developer</h2>
+        </div>
+        
+        <div class="certificate-body">
+            <p class="certificate-text">This is to certify that</p>
+            <p class="recipient-name">{{ recipient_name }}</p>
+            <p class="certificate-text">has successfully demonstrated proficiency in MangaDB development,<br>
+            including document storage, custom wire protocol implementation,<br>
+            and advanced NoSQL database management techniques.</p>
+            
+            <p class="certificate-date">Issued on: {{ certificate_date }}</p>
+        </div>
+        
+        <div class="certificate-footer">
+            <p class="signature">{{ signatory_name }}</p>
+            <p class="signatory">{{ signatory_title }}</p>
+        </div>
+        
+        <div class="certificate-seal">
+            <div class="seal-text">
+                MANGADB<br>CERTIFIED<br>DEVELOPER
+            </div>
+        </div>
+    </div>
+</body>
+</html>

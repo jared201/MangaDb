@@ -16,6 +16,7 @@ A lightweight MongoDB-like service for saving, modifying, reading, and deleting 
 - JSON editor for document creation and modification
 - Query builder for searching documents
 - Automatic management of the MongoDB service
+- MangaDB Certified Developer certificate generation
 
 ## Project Components
 
@@ -113,6 +114,7 @@ The FastAPI application provides the following endpoints:
 
 - `GET /`: Landing page with Bulma CSS and information about how MangaDB works
 - `GET /api`: Get information about the API
+- `GET /certificate`: Generate a MangaDB Certified Developer certificate
 - `GET /collections`: List all collections
 - `GET /collections/{collection}`: Get all documents in a collection
 - `POST /collections/{collection}`: Create a new document
@@ -222,6 +224,41 @@ client.disconnect()
 ```
 
 The HTTP client translates all operations to REST API calls to the FastAPI server running on port 8000.
+
+## Certificate Generation
+
+MangaDB includes a feature to generate professional-looking MangaDB Certified Developer certificates.
+
+### Using the Certificate Feature
+
+To generate a certificate:
+
+1. Navigate to the certificate endpoint: `http://127.0.0.1:8000/certificate`
+2. By default, this generates a certificate for "John Doe" with "Jared Odulio" as the signatory
+3. You can customize the certificate by providing query parameters:
+   ```
+   http://127.0.0.1:8000/certificate?recipient_name=Jane%20Smith&signatory_name=Jared%20Odulio&signatory_title=MangaDB%20Lead%20Developer
+   ```
+
+Available parameters:
+- `recipient_name`: The name of the person receiving the certificate (default: "John Doe")
+- `signatory_name`: The name of the person signing the certificate (default: "Jared Odulio")
+- `signatory_title`: The title of the signatory (default: "MangaDB Lead Developer")
+
+### Saving the Certificate
+
+To save the certificate as a PDF:
+1. Open the certificate URL in a web browser
+2. Use the browser's print functionality (Ctrl+P or Cmd+P)
+3. Select "Save as PDF" as the destination
+4. Click "Save"
+
+To save as PNG:
+1. Open the certificate URL in a web browser
+2. Take a screenshot of the certificate
+3. Save the screenshot as a PNG file
+
+For more detailed information about the certificate feature, see the `CERTIFICATE_FEATURE.md` file.
 
 ## Querying Collections
 
@@ -571,6 +608,7 @@ You can deploy the MangaDB FastAPI application on Render.com by following these 
 - The FastAPI application will be available at your Render.com URL
 - You can access the API documentation at `https://your-app-name.onrender.com/docs`
 - Use the API endpoints as described in the "Using the FastAPI Application" section
+- Generate certificates at `https://your-app-name.onrender.com/certificate`
 
 ### Limitations and Considerations
 
