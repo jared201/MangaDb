@@ -66,7 +66,7 @@ async def startup_db_client():
     else:
         mongo_client = MongoDBClient(host)
 
-    # Start MongoDB service in a separate process
+    # Start a MangaDB service in a separate process
     if not os.path.exists("data"):
         os.makedirs("data")
 
@@ -97,50 +97,8 @@ async def root(request: Request):
     """Root endpoint that serves the landing page."""
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.get("/exam", response_class=HTMLResponse, include_in_schema=False)
-async def exam(request: Request):
-    """Serve the MangaDB Certified Developer Examination page."""
-    return templates.TemplateResponse("exam.html", {"request": request})
 
-@app.get("/certificate", response_class=HTMLResponse, include_in_schema=False)
-async def certificate(
-    request: Request, 
-    recipient_name: str = "John Doe", 
-    signatory_name: str = "Jared Odulio", 
-    signatory_title: str = "MangaDB Lead Developer",
-    payment_id: Optional[str] = None
-):
-    """Generate a MangaDB Certified Developer certificate."""
-    # Get current date in a nice format
-    current_date = datetime.datetime.now().strftime("%B %d, %Y")
-    
-    # If payment_id is provided, verify payment status
-    if payment_id:
-        # Find the exam result with this payment ID
-        try:
-            results = mongo_client.find("exam_attempts", {"payment_id": payment_id})
-            if results and len(results) > 0:
-                # Update the certificate issued status
-                mongo_client.update("exam_attempts", {"payment_id": payment_id}, {"certificate_issued": True})
-            else:
-                # Payment ID not found, but we'll still show the certificate
-                # In a production app, you might want to redirect to an error page
-                pass
-        except Exception as e:
-            # Log the error but continue to show the certificate
-            print(f"Error verifying payment: {str(e)}")
-    
-    # Render the certificate template with the provided information
-    return templates.TemplateResponse(
-        "certificate.html", 
-        {
-            "request": request,
-            "recipient_name": recipient_name,
-            "signatory_name": signatory_name,
-            "signatory_title": signatory_title,
-            "certificate_date": current_date
-        }
-    )
+
 
 @app.get("/api")
 async def api_info():
