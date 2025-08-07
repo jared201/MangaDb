@@ -1,13 +1,16 @@
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 import datetime
 import subprocess
 import threading
 import os
 import sys
 import argparse
+import uuid
+from typing import Optional
 from mongo_db_client import MongoDBClient
 from textualize_client import TextualizeClient
 
@@ -24,6 +27,22 @@ templates = Jinja2Templates(directory="templates")
 # Will be initialized in startup_db_client with command line arguments
 mongo_client = None
 mongo_service_process = None
+
+# Define data models for the certification workflow
+class ExamResult(BaseModel):
+    full_name: str
+    email: str
+    score: int
+    passed: bool
+    payment_status: str = "pending"
+    payment_id: Optional[str] = None
+    certificate_issued: bool = False
+    timestamp: str
+
+class PaymentUpdate(BaseModel):
+    email: str
+    payment_id: str
+    payment_status: str
 
 @app.on_event("startup")
 async def startup_db_client():
@@ -78,11 +97,38 @@ async def root(request: Request):
     """Root endpoint that serves the landing page."""
     return templates.TemplateResponse("index.html", {"request": request})
 
+@app.get("/exam", response_class=HTMLResponse)
+async def exam(request: Request):
+    """Serve the MangaDB Certified Developer Examination page."""
+    return templates.TemplateResponse("exam.html", {"request": request})
+
 @app.get("/certificate", response_class=HTMLResponse)
-async def certificate(request: Request, recipient_name: str = "John Doe", signatory_name: str = "Jared Odulio", signatory_title: str = "MangaDB Lead Developer"):
+async def certificate(
+    request: Request, 
+    recipient_name: str = "John Doe", 
+    signatory_name: str = "Jared Odulio", 
+    signatory_title: str = "MangaDB Lead Developer",
+    payment_id: Optional[str] = None
+):
     """Generate a MangaDB Certified Developer certificate."""
     # Get current date in a nice format
     current_date = datetime.datetime.now().strftime("%B %d, %Y")
+    
+    # If payment_id is provided, verify payment status
+    if payment_id:
+        # Find the exam result with this payment ID
+        try:
+            results = mongo_client.find("exam_attempts", {"payment_id": payment_id})
+            if results and len(results) > 0:
+                # Update the certificate issued status
+                mongo_client.update("exam_attempts", {"payment_id": payment_id}, {"certificate_issued": True})
+            else:
+                # Payment ID not found, but we'll still show the certificate
+                # In a production app, you might want to redirect to an error page
+                pass
+        except Exception as e:
+            # Log the error but continue to show the certificate
+            print(f"Error verifying payment: {str(e)}")
     
     # Render the certificate template with the provided information
     return templates.TemplateResponse(
@@ -105,7 +151,10 @@ async def api_info():
         "endpoints": [
             {"path": "/", "method": "GET", "description": "Landing page"},
             {"path": "/api", "method": "GET", "description": "This API information"},
+            {"path": "/exam", "method": "GET", "description": "MangaDB Certified Developer Examination"},
             {"path": "/certificate", "method": "GET", "description": "Generate a MangaDB Certified Developer certificate"},
+            {"path": "/api/exam-results", "method": "POST", "description": "Save examination results"},
+            {"path": "/api/update-payment", "method": "POST", "description": "Update payment status"},
             {"path": "/collections", "method": "GET", "description": "List all collections"},
             {"path": "/collections/{collection}", "method": "GET", "description": "Get all documents in a collection"},
             {"path": "/collections/{collection}", "method": "POST", "description": "Create a new document"},
@@ -114,6 +163,48 @@ async def api_info():
             {"path": "/collections/{collection}/{id}", "method": "DELETE", "description": "Delete a document"},
         ]
     }
+
+@app.post("/api/exam-results")
+async def save_exam_results(exam_result: ExamResult):
+    """Save examination results to the database."""
+    try:
+        # Generate a unique ID for the exam result
+        exam_result_dict = exam_result.dict()
+        
+        # Insert the exam result into the database
+        doc_id = mongo_client.insert("exam_attempts", exam_result_dict)
+        return {"status": "success", "id": doc_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/update-payment")
+async def update_payment_status(payment_update: PaymentUpdate):
+    """Update payment status for an examination."""
+    try:
+        # Find the exam result by email
+        results = mongo_client.find("exam_attempts", {"email": payment_update.email})
+        
+        if not results or len(results) == 0:
+            raise HTTPException(status_code=404, detail="Exam result not found")
+        
+        # Update the payment status and payment ID
+        count = mongo_client.update(
+            "exam_attempts", 
+            {"email": payment_update.email}, 
+            {
+                "payment_status": payment_update.payment_status,
+                "payment_id": payment_update.payment_id
+            }
+        )
+        
+        if count == 0:
+            raise HTTPException(status_code=404, detail="Failed to update payment status")
+            
+        return {"status": "success", "modified_count": count}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/collections")
